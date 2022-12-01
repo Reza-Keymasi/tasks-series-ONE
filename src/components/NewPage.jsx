@@ -5,19 +5,23 @@ import { DropDownListComponent } from '@syncfusion/ej2-react-dropdowns';
 import { NumericTextBoxComponent } from '@syncfusion/ej2-react-inputs';
 
 
-import { AccumulationChartComponent, AccumulationSeriesCollectionDirective, AccumulationSeriesDirective, AccumulationTooltip, Category, ChartComponent, ColumnSeries, DataLabel, Inject, Legend, LineSeries, SeriesCollectionDirective, SeriesDirective, Tooltip } from "@syncfusion/ej2-react-charts";
-import { DashboardLayoutComponent, PanelDirective, PanelsDirective } from '@syncfusion/ej2-react-layouts';
+
+import { DashboardLayoutComponent } from '@syncfusion/ej2-react-layouts';
 
 import { enableRipple } from '@syncfusion/ej2-base';
 
 
-import {lineData, pieData, pieData2, chartData, panels} from "./data/newData"
+import { panels} from "./data/newData"
+import { useStateContext } from '../context/StateContextProvider';
 
 // const cellSpacing =[10,10]
 
 enableRipple(true);
 
 const NewPage = () => { 
+
+  const { position, setPosition, resizePanel, setResizePanel } = useStateContext()
+
   const cellSpacing = [10, 10];
   let count = 7;
   let resize = ['e-south-east', 'e-east', 'e-west', 'e-north', 'e-south'];
@@ -44,73 +48,58 @@ const NewPage = () => {
 
   
 
-  // Line Chart
-  const lineTemplate = () => {
-    <div>
-      <ChartComponent style={{ "height": "162px" }}><Inject services={[LineSeries]}/>
-        <SeriesCollectionDirective>
-            <SeriesDirective dataSource={lineData} xName='x' yName='y' type='Line'/>
-        </SeriesCollectionDirective>
-      </ChartComponent>
-    </div>
-  };
 
-  // Pie Chart 
-  const pieTemplate = () => {
-    <div>
-      <AccumulationChartComponent style={{ "height": "162px" }} tooltip={{ enable: true }}><Inject services= {[AccumulationTooltip]}/>
-          <AccumulationSeriesCollectionDirective>
-              <AccumulationSeriesDirective dataSource={pieData} xName='x' yName='y' innerRadius="40%"/>
-          </AccumulationSeriesCollectionDirective>
-      </AccumulationChartComponent>
-    </div>
-  };
-
-  // Pie Chart 2
-  const pieTemplate2 = () => {
-    const dataLabel = { visible: true, position: 'Inside', name: 'text', font: { fontWeight: '600' } };
-    <div>
-      <AccumulationChartComponent style={{ "height": "162px" }} tooltip={{ enable: true }}>
-        <Inject services={[AccumulationTooltip]}/>
-        <AccumulationSeriesCollectionDirective>
-            <AccumulationSeriesDirective dataSource={pieData2} dataLabel={dataLabel} xName='x' yName='y' radius="70%" name='Browser'/>
-        </AccumulationSeriesCollectionDirective>
-      </AccumulationChartComponent>
-    </div>
-  }
-
-  // Column Chart
-
-  const columnTemplate = () => {
-    <ChartComponent style={{ "height": "162px" }} primaryXAxis={{ valueType: 'Category' }}>
-      <Inject services={[ColumnSeries, Legend, Tooltip, Category, DataLabel]}/>
-      <SeriesCollectionDirective>
-          <SeriesDirective dataSource={chartData} xName='month' yName='sales' type='Column'/>
-      </SeriesCollectionDirective>
-    </ChartComponent>
-  }
 
   const handleChange = (e) => {
-      // console.log(e)
+      console.log(e)
       // console.log(e.changedPanels[0])
 
     for(let i=0; i < e.changedPanels.length; i++) {
       const changed = e.changedPanels[i]
+      // changed positions
       console.log(changed)
       console.log(`Changed Panel is ${changed.id} with row:${changed.row}. Size X is: ${changed.sizeX} and Size Y is: ${changed.sizeY}.`)
+
+      // get the positions that changed and put them in an Object (state)
+      setPosition({sizeX: changed.sizeX, sizeY: changed.sizeY, col: changed.col, row: changed.row})
+      console.log( "this data is for CHANGING POITIONS",position)
     };
-    for (let j = 0; j < e.addedPanels.length; j++) {
-      const added = e.addedPanels[j];
-      console.log(added)
-      console.log(`Added Panel is ${added.id} with row:${added.row}. Size X is: ${added.sizeX} and Size Y is: ${added.sizeY}.`)
-    }
+    
+  };
+
+
+  // panel resizing by stop point
+  const handleResizeStop = (e) => {
+    // console.log(e)
+    const ele = e.event
+    // console.log(ele)
+    setResizePanel({
+      clienX: ele.clientX,
+      clienY: ele.clientY,
+      layerX: ele.layerX,
+      layerY: ele.layerY,
+      movementX: ele.movementX,
+      movementY: ele.movementY,
+      offSetX: ele.offsetX,
+      offSetY: ele.offsetY,
+      pageX: ele.pageX,
+      pageY: ele.pageY,
+      screenX: ele.screenX,
+      screenY: ele.screenY,
+      x: ele.x,
+      y: ele.y
+    })
+    console.log("this data is for RESIZING",resizePanel)
+    // console.log(panels);
+    // console.log(dashboardObj);
   }
+
 
   return (
     <div style={{display: "i", justifyContent: "center", margin:"100px"}}>
       <div style={{margin:"50px"}}>
       <div className="inline" id="control">
-        <DashboardLayoutComponent change={handleChange} id='dashboard_layout' ref={s => (dashboardObj = s)} cellSpacing={cellSpacing} panels={panels} allowResizing={true} columns={5} resizableHandles={resize} />
+        <DashboardLayoutComponent resizeStop={handleResizeStop} change={handleChange} id='dashboard_layout' ref={s => (dashboardObj = s)} cellSpacing={cellSpacing} panels={panels} allowResizing={true} columns={5} resizableHandles={resize} />
         </div>
         <div className="inline" id="properties">
             <table>
@@ -154,17 +143,8 @@ const NewPage = () => {
             </tbody>
             </table>
         </div>
-            <div style={{margin: "100px", justifyContent: "center", alignItems: "center", width:"500px"}}> 
-                <DashboardLayoutComponent id="dashboard_default" columns={6} cellSpacing={cellSpacing} allowResizing={true}>
-                    <PanelsDirective>
-                        <PanelDirective sizeX={3} sizeY={2} row={0} col={0} content={pieTemplate} header="<div>Product usage ratio</div>"/>
-                        <PanelDirective sizeX={3} sizeY={2} row={0} col={3} content={columnTemplate} header="<div>Last year Sales Comparison</div>"/>
-                        <PanelDirective sizeX={3} sizeY={2} row={0} col={3} content={pieTemplate2} header="<div>Mobile browsers usage</div>"/>
-                        <PanelDirective sizeX={3} sizeY={2} row={1} col={0} content={lineTemplate} header="<div>Sales increase percentage</div>"/>
-                    </PanelsDirective>
-                </DashboardLayoutComponent>
-            </div>
-        </div>
+            
+      </div>
     </div>
   )
 }
